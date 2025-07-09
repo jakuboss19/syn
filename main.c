@@ -17,7 +17,10 @@ int main() {
 
     int choice;
     printf("Enter the number of the song to play: ");
-    scanf("%d", &choice);
+    if (scanf("%d", &choice) != 1) {
+        printf("Invalid input. Please enter a number.\n");
+        return 1;
+    }
     if (choice < 1 || choice > count) {
         printf("Invalid choice.\n");
         return 1;

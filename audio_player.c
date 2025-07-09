@@ -54,14 +54,19 @@ void play_mp3(const char *filename) {
     wanted_spec.samples = 1024;
     wanted_spec.callback = NULL;
 
-    if (SDL_OpenAudio(&wanted_spec, NULL) < 0) {
-        fprintf(stderr, "Unable to open audio: %s\n", SDL_GetError());
+    SDL_AudioSpec obtained_spec;
+    SDL_zero(obtained_spec);
+    
+    // Open the default audio device
+    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(NULL, 0, &wanted_spec, &obtained_spec, 0);
+    if (dev == 0) {
+        fprintf(stderr, "Unable to open audio device: %s\n", SDL_GetError());
         SDL_Quit();
         goto cleanup;
     }
 
     // Start playback
-    SDL_PauseAudio(0);
+    SDL_PauseAudioDevice(dev, 0);
 
     buffer = (unsigned char*) malloc(BUFFER_SIZE);
     if (buffer == NULL) {
@@ -72,19 +77,19 @@ void play_mp3(const char *filename) {
     printf("Playing: %s\n", filename);
 
     while (mpg123_read(mh, buffer, BUFFER_SIZE, &done) == MPG123_OK) {
-        SDL_QueueAudio(1, buffer, (Uint32)done);
+        SDL_QueueAudio(dev, buffer, (Uint32)done);
         SDL_Delay(10); // Short delay to allow playback
     }
 
     // Wait for all audio to finish
-    while (SDL_GetQueuedAudioSize(1) > 0) {
+    while (SDL_GetQueuedAudioSize(dev) > 0) {
         SDL_Delay(100);
     }
 
     free(buffer);
 
 cleanup_sdl:
-    SDL_CloseAudio();
+    SDL_CloseAudioDevice(dev);
     SDL_Quit();
 
 cleanup:
