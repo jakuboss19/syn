@@ -1,6 +1,5 @@
 # syn
 
-A simple command-line MP3 player written in C, using mpg123 for decoding and SDL2 for audio playback.
 
 ## Features
 - Play MP3 files from a selectable list
