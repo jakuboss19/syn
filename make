@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -std=c11
 LIBS = -lmpg123 -lSDL2
-OBJ = main.o audio_player.o history.o
+OBJ = main.o audio_player.o history.o playlist.o
 
 all: player
 
