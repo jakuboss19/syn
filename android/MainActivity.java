@@ -15,7 +15,11 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
     private ListView listView;
     private ArrayList<String> songList = new ArrayList<>();
+    private ArrayList<String> songNameList = new ArrayList<>(); // Store just the song names
     private MediaPlayer mediaPlayer = new MediaPlayer();
+    private String currentSongName = null;
+    private TextView currentSongTextView; // For showing currently playing song
+    private Button playButton, pauseButton, stopButton; // Playback controls
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,16 +27,53 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         listView = findViewById(R.id.songListView);
+        currentSongTextView = findViewById(R.id.currentSongTextView); // Add this to your layout
+        playButton = findViewById(R.id.playButton); // Add to layout
+        pauseButton = findViewById(R.id.pauseButton); // Add to layout
+        stopButton = findViewById(R.id.stopButton); // Add to layout
 
         // Request storage permission
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
 
         loadSongs();
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, songList);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, songNameList);
         listView.setAdapter(adapter);
 
         listView.setOnItemClickListener((parent, view, position, id) -> playSong(songList.get(position)));
+
+        // Button listeners will be set up after layout is available
+        playButton.setOnClickListener(v -> {
+            if (!mediaPlayer.isPlaying() && mediaPlayer.getCurrentPosition() > 0) {
+                mediaPlayer.start();
+                if (currentSongName != null && currentSongTextView != null) {
+                    currentSongTextView.setText("Playing: " + currentSongName);
+                }
+            }
+        });
+
+        pauseButton.setOnClickListener(v -> {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+                if (currentSongName != null && currentSongTextView != null) {
+                    currentSongTextView.setText("Paused: " + currentSongName);
+                }
+            }
+        });
+
+        stopButton.setOnClickListener(v -> {
+            if (mediaPlayer.isPlaying() || mediaPlayer.getCurrentPosition() > 0) {
+                mediaPlayer.stop();
+                try {
+                    mediaPlayer.prepare(); // Prepare for next play
+                } catch (Exception e) {
+                    // Ignore for now
+                }
+                if (currentSongName != null && currentSongTextView != null) {
+                    currentSongTextView.setText("Stopped: " + currentSongName);
+                }
+            }
+        });
     }
 
     private void loadSongs() {
@@ -41,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
             for (File file : musicDir.listFiles()) {
                 if (file.getName().endsWith(".mp3")) {
                     songList.add(file.getAbsolutePath());
+                    songNameList.add(file.getName());
                 }
             }
         }
@@ -52,9 +94,22 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.setDataSource(path);
             mediaPlayer.prepare();
             mediaPlayer.start();
-            Toast.makeText(this, "Playing: " + new File(path).getName(), Toast.LENGTH_SHORT).show();
+            currentSongName = new File(path).getName();
+            if (currentSongTextView != null) {
+                currentSongTextView.setText("Playing: " + currentSongName);
+            }
+            Toast.makeText(this, "Playing: " + currentSongName, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Toast.makeText(this, "Error playing song", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
     }
 } 
