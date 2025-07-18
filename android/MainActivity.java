@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import java.io.File;
 import java.util.ArrayList;
+import android.os.Handler;
 
 public class MainActivity extends AppCompatActivity {
     private ListView listView;
@@ -20,6 +21,9 @@ public class MainActivity extends AppCompatActivity {
     private String currentSongName = null;
     private TextView currentSongTextView; // For showing currently playing song
     private Button playButton, pauseButton, stopButton; // Playback controls
+    private SeekBar seekBar;
+    private Handler handler = new Handler();
+    private Runnable updateSeekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
         playButton = findViewById(R.id.playButton); // Add to layout
         pauseButton = findViewById(R.id.pauseButton); // Add to layout
         stopButton = findViewById(R.id.stopButton); // Add to layout
+        seekBar = findViewById(R.id.seekBar);
 
         // Request storage permission
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
@@ -74,6 +79,34 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // SeekBar change listener
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && mediaPlayer.isPlaying()) {
+                    mediaPlayer.seekTo(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        // Update SeekBar as song plays
+        updateSeekBar = new Runnable() {
+            @Override
+            public void run() {
+                if (mediaPlayer != null && (mediaPlayer.isPlaying() || mediaPlayer.getCurrentPosition() > 0)) {
+                    seekBar.setMax(mediaPlayer.getDuration());
+                    seekBar.setProgress(mediaPlayer.getCurrentPosition());
+                    handler.postDelayed(this, 500);
+                }
+            }
+        };
     }
 
     private void loadSongs() {
@@ -99,6 +132,11 @@ public class MainActivity extends AppCompatActivity {
                 currentSongTextView.setText("Playing: " + currentSongName);
             }
             Toast.makeText(this, "Playing: " + currentSongName, Toast.LENGTH_SHORT).show();
+            // Start updating seek bar
+            if (seekBar != null) {
+                seekBar.setMax(mediaPlayer.getDuration());
+                handler.post(updateSeekBar);
+            }
         } catch (Exception e) {
             Toast.makeText(this, "Error playing song", Toast.LENGTH_SHORT).show();
         }
@@ -111,5 +149,6 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        handler.removeCallbacksAndMessages(null);
     }
 } 
