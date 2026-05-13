@@ -1,6 +1,5 @@
 # syn
 
-A feature-rich command-line MP3 player written in C, using mpg123 for decoding and SDL2 for audio playback.
 
 ## Features
 - **Dynamic MP3 Discovery**: Automatically finds MP3 files in the `songs/` directory
